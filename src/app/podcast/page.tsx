@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useUserStore, type PodcastTopicId, type SavedPodcast } from "@/stores/user-store";
 import { TopicSelector } from "@/components/podcast/topic-selector";
 import { AudioPlayer, AudioPlayerSkeleton } from "@/components/podcast/audio-player";
+import { useToast } from "@/components/ui/toast";
 import type { QuranVerse } from "@/lib/podcast/script-generator";
 import { Footer } from "@/components/layout/footer";
 
@@ -167,6 +169,9 @@ export default function PodcastPage() {
     updatePodcastAudioUrl,
   } = useUserStore();
   
+  const router = useRouter();
+  const { addToast } = useToast();
+  
   const [viewState, setViewState] = useState<ViewState>("loading");
   const [podcastData, setPodcastData] = useState<PodcastData | null>(null);
   const [audioData, setAudioData] = useState<AudioData | null>(null);
@@ -177,6 +182,8 @@ export default function PodcastPage() {
   const [historyTab, setHistoryTab] = useState<HistoryTab>("all");
   const [selectedHistoryPodcast, setSelectedHistoryPodcast] = useState<SavedPodcast | null>(null);
   const [currentPodcastId, setCurrentPodcastId] = useState<string | null>(null);
+  const [isAudioProcessing, setIsAudioProcessing] = useState(false);
+  const pollingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (user.isLoading) return;
@@ -193,6 +200,30 @@ export default function PodcastPage() {
     setViewState("dashboard");
   }, [user.isLoading, user.podcastPreferences]);
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      pollingRef.current = false;
+    };
+  }, []);
+
+  // Show toast when navigating away while processing
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isAudioProcessing) {
+        addToast({
+          type: "info",
+          title: "Audio sedang diproses",
+          description: "Kami akan memberi tahu saat podcast siap.",
+          duration: 8000,
+        });
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isAudioProcessing, addToast]);
+
   const handleTopicsComplete = () => {
     setViewState("dashboard");
     setShowTopicEditor(false);
@@ -202,11 +233,19 @@ export default function PodcastPage() {
   const pollForAudio = async (jobId: string, podcastId: string) => {
     const maxAttempts = 60; // 5 minutes max (5s intervals)
     let attempts = 0;
+    pollingRef.current = true;
+    setIsAudioProcessing(true);
 
     const poll = async () => {
+      if (!pollingRef.current) return; // Stop if component unmounted
+
       try {
         const res = await fetch(`/api/podcast/status/${jobId}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          attempts++;
+          if (attempts < maxAttempts) setTimeout(poll, 5000);
+          return;
+        }
 
         const job = await res.json();
         
@@ -223,22 +262,46 @@ export default function PodcastPage() {
           // Update history with audio URL
           updatePodcastAudioUrl(podcastId, job.audioUrl);
           setGenerationStep("");
-          return; // Done!
+          setIsAudioProcessing(false);
+          pollingRef.current = false;
+
+          // Show toast notification
+          addToast({
+            type: "success",
+            title: "🎙️ Podcast siap!",
+            description: "Audio podcast Anda sudah selesai diproses.",
+            action: {
+              label: "Putar Sekarang",
+              onClick: () => router.push("/podcast"),
+            },
+            duration: 15000,
+          });
+          return;
         }
 
         if (job.status === "failed") {
           console.warn("[Podcast] TTS job failed:", job.error);
           setGenerationStep("");
-          return; // Stop polling
+          setIsAudioProcessing(false);
+          pollingRef.current = false;
+          
+          addToast({
+            type: "error",
+            title: "Gagal membuat audio",
+            description: "Anda masih bisa membaca naskah podcast.",
+          });
+          return;
         }
 
         // Still processing - continue polling
         attempts++;
         if (attempts < maxAttempts) {
-          setTimeout(poll, 5000); // Poll every 5 seconds
+          setTimeout(poll, 5000);
         } else {
           console.warn("[Podcast] Audio generation timed out");
           setGenerationStep("");
+          setIsAudioProcessing(false);
+          pollingRef.current = false;
         }
       } catch (error) {
         console.error("[Podcast] Poll error:", error);
@@ -623,15 +686,17 @@ export default function PodcastPage() {
         <PageHeader />
         <main className="pt-24 pb-12 px-4 flex items-center justify-center min-h-[70vh]">
           <div className="text-center max-w-md">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center border border-sky-200 animate-pulse">
-              <span className="text-4xl">✨</span>
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center border border-sky-200">
+              <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Menyiapkan Podcast</h2>
-            <p className="text-slate-600 mb-6">{generationStep}</p>
-            <div className="w-full max-w-xs mx-auto h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-sky-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Menyiapkan Renungan</h2>
+            <p className="text-slate-600 mb-4">{generationStep}</p>
+            <div className="w-full max-w-xs mx-auto h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style={{ width: '70%' }} />
             </div>
-            <p className="text-xs text-slate-400 mt-4">Ini mungkin memakan waktu 30-60 detik...</p>
+            <p className="text-xs text-slate-400 mt-6">
+              Sebentar lagi selesai... ⏳
+            </p>
           </div>
         </main>
       </div>
@@ -682,7 +747,7 @@ export default function PodcastPage() {
 
         <main className="pt-24 pb-12 px-4">
           <div className="max-w-3xl mx-auto">
-            {/* Audio Player or Script-Only View */}
+            {/* Audio Player or Processing/Script-Only View */}
             {hasAudio ? (
               <AudioPlayer
                 audioData={audioData.audio}
@@ -691,6 +756,21 @@ export default function PodcastPage() {
                 title={podcastData.title}
                 verseKey={podcastData.verse.verseKey}
               />
+            ) : isAudioProcessing ? (
+              <div className="bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center mb-6">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center border border-sky-200">
+                  <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">{podcastData.title}</h3>
+                <p className="text-sm text-sky-700 mb-2">Audio sedang diproses...</p>
+                <p className="text-xs text-slate-500 mb-4">
+                  Biasanya 1-2 menit. Anda bisa membaca naskah dulu atau jelajahi aplikasi.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-xs text-sky-600">
+                  <span className="w-2 h-2 bg-sky-500 rounded-full animate-pulse" />
+                  <span>Kami akan memberi tahu saat selesai</span>
+                </div>
+              </div>
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center mb-6">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center border border-amber-200">
