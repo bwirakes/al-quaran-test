@@ -27,31 +27,31 @@ export const PODCAST_TOPICS = [
 
 export type PodcastTopicId = typeof PODCAST_TOPICS[number]["id"];
 
-// Saved podcast entry
+// Saved podcast entry - minimal data to avoid localStorage quota issues
 export interface SavedPodcast {
   id: string;
   title: string;
   topic: string;
   verseKey: string;
-  arabic: string;
-  translation: string;
-  script: string;
   audioUrl: string | null;
   duration: number;
   createdAt: string;
-  isSaved: boolean; // User explicitly saved this
+  isSaved: boolean;
 }
 
 export interface PodcastPreferences {
   selectedTopics: PodcastTopicId[];
   hasCompletedOnboarding: boolean;
   lastGeneratedDate: string | null;
+  // Only store URL reference, not full data
   cachedPodcast: {
     date: string;
-    script: string;
     audioUrl: string | null;
+    title: string;
+    verseKey: string;
+    topic: string;
   } | null;
-  history: SavedPodcast[]; // All generated podcasts
+  history: SavedPodcast[]; // Keep last 10 podcasts
 }
 
 export interface UserState {
@@ -193,8 +193,8 @@ export function useUserStore() {
     }));
   }, []);
 
-  // Cache generated podcast
-  const cachePodcast = useCallback((script: string, audioUrl: string | null) => {
+  // Cache generated podcast - only store minimal metadata
+  const cachePodcast = useCallback((metadata: { title: string; verseKey: string; topic: string; audioUrl: string | null }) => {
     const today = new Date().toISOString().split("T")[0];
     setUser((prev) => ({
       ...prev,
@@ -203,8 +203,7 @@ export function useUserStore() {
         lastGeneratedDate: today,
         cachedPodcast: {
           date: today,
-          script,
-          audioUrl,
+          ...metadata,
         },
       },
     }));
@@ -221,7 +220,7 @@ export function useUserStore() {
     }));
   }, []);
 
-  // Add podcast to history
+  // Add podcast to history - keep only last 10 to save localStorage space
   const addPodcastToHistory = useCallback((podcast: Omit<SavedPodcast, "id" | "createdAt" | "isSaved">) => {
     const newPodcast: SavedPodcast = {
       ...podcast,
@@ -234,7 +233,7 @@ export function useUserStore() {
       ...prev,
       podcastPreferences: {
         ...prev.podcastPreferences,
-        history: [newPodcast, ...prev.podcastPreferences.history].slice(0, 50), // Keep last 50
+        history: [newPodcast, ...prev.podcastPreferences.history].slice(0, 10), // Keep last 10
       },
     }));
     

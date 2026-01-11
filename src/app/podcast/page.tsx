@@ -187,23 +187,9 @@ export default function PodcastPage() {
       return;
     }
 
-    const today = new Date().toISOString().split("T")[0];
-    if (prefs.cachedPodcast && prefs.cachedPodcast.date === today) {
-      try {
-        const cached = JSON.parse(prefs.cachedPodcast.script);
-        setPodcastData(cached.podcast);
-        if (cached.audio) {
-          setAudioData(cached.audio);
-          setViewState("playing");
-        } else {
-          setViewState("dashboard");
-        }
-      } catch {
-        setViewState("dashboard");
-      }
-    } else {
-      setViewState("dashboard");
-    }
+    // We no longer store full podcast data - just go to dashboard
+    // Users can access today's podcast from history if they've generated one
+    setViewState("dashboard");
   }, [user.isLoading, user.podcastPreferences]);
 
   const handleTopicsComplete = () => {
@@ -272,20 +258,23 @@ export default function PodcastPage() {
 
       setAudioData(finalAudioData);
       
-      // Add to history
+      // Add to history (minimal data to avoid localStorage quota)
       const podcastId = addPodcastToHistory({
         title: generateData.data.title,
         topic: generateData.data.topic,
         verseKey: generateData.data.verse.verseKey,
-        arabic: generateData.data.verse.arabic,
-        translation: generateData.data.verse.translation,
-        script: generateData.data.script,
         audioUrl: finalAudioData.audioUrl || null,
         duration: generateData.data.estimatedDuration,
       });
       setCurrentPodcastId(podcastId);
       
-      cachePodcast(JSON.stringify({ podcast: generateData.data, audio: finalAudioData }), finalAudioData.audioUrl || null);
+      // Cache minimal metadata only
+      cachePodcast({
+        title: generateData.data.title,
+        verseKey: generateData.data.verse.verseKey,
+        topic: generateData.data.topic,
+        audioUrl: finalAudioData.audioUrl || null,
+      });
       setViewState("playing");
     } catch (err) {
       console.error("Podcast generation error:", err);
@@ -296,15 +285,16 @@ export default function PodcastPage() {
 
   const playFromHistory = (podcast: SavedPodcast) => {
     setSelectedHistoryPodcast(podcast);
+    // History only stores minimal data - no script or verse details
     setPodcastData({
       title: podcast.title,
       topic: podcast.topic,
       verse: {
         verseKey: podcast.verseKey,
-        arabic: podcast.arabic,
-        translation: podcast.translation,
+        arabic: "", // Not stored in history
+        translation: "", // Not stored in history
       },
-      script: podcast.script,
+      script: "", // Not stored in history
       estimatedDuration: podcast.duration,
       generatedAt: podcast.createdAt,
     });
@@ -689,34 +679,51 @@ export default function PodcastPage() {
                   {isSaved ? "Tersimpan" : "Simpan"}
                 </button>
               )}
-              <button
-                onClick={() => setShowScript(!showScript)}
-                className="px-4 py-2 rounded-lg font-medium text-sm bg-slate-100 text-slate-600 border border-stone-200 hover:bg-slate-200 transition-colors"
-              >
-                {showScript ? "Sembunyikan Naskah" : "Lihat Naskah"}
-              </button>
+              {/* Only show script button if we have script data */}
+              {podcastData.script && (
+                <button
+                  onClick={() => setShowScript(!showScript)}
+                  className="px-4 py-2 rounded-lg font-medium text-sm bg-slate-100 text-slate-600 border border-stone-200 hover:bg-slate-200 transition-colors"
+                >
+                  {showScript ? "Sembunyikan Naskah" : "Lihat Naskah"}
+                </button>
+              )}
             </div>
 
-            {/* Verse Card */}
-            <div className="mt-8 bg-sky-50 border border-sky-200 rounded-xl p-6">
-              <p className="text-[#496580] text-sm font-medium mb-3">
-                QS. {podcastData.verse.verseKey}
-              </p>
-              <p 
-                className="text-2xl text-slate-900 mb-4 leading-relaxed text-right"
-                dir="rtl"
-                lang="ar"
-                style={{ fontFamily: '"Scheherazade New", serif' }}
-              >
-                {podcastData.verse.arabic}
-              </p>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                {podcastData.verse.translation}
-              </p>
-            </div>
+            {/* Verse Card - only show if we have verse data */}
+            {podcastData.verse.arabic && (
+              <div className="mt-8 bg-sky-50 border border-sky-200 rounded-xl p-6">
+                <p className="text-[#496580] text-sm font-medium mb-3">
+                  QS. {podcastData.verse.verseKey}
+                </p>
+                <p 
+                  className="text-2xl text-slate-900 mb-4 leading-relaxed text-right"
+                  dir="rtl"
+                  lang="ar"
+                  style={{ fontFamily: '"Scheherazade New", serif' }}
+                >
+                  {podcastData.verse.arabic}
+                </p>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {podcastData.verse.translation}
+                </p>
+              </div>
+            )}
 
-            {/* Script Panel */}
-            {(showScript || !hasAudio) && (
+            {/* Minimal info card when playing from history */}
+            {!podcastData.verse.arabic && (
+              <div className="mt-8 bg-slate-50 border border-stone-200 rounded-xl p-6 text-center">
+                <p className="text-[#496580] text-sm font-medium">
+                  QS. {podcastData.verse.verseKey}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Memutar dari riwayat
+                </p>
+              </div>
+            )}
+
+            {/* Script Panel - only show if we have script data */}
+            {podcastData.script && (showScript || !hasAudio) && (
               <div className="mt-6 bg-slate-50 border border-stone-200 rounded-xl p-6 max-h-[32rem] overflow-y-auto">
                 <h4 className="text-sm font-semibold text-[#496580] mb-4">
                   {hasAudio ? "Naskah Podcast" : "Renungan Hari Ini"}

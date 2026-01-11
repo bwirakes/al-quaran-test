@@ -144,34 +144,31 @@ export async function findRelevantVerse(topics: PodcastTopicId[]): Promise<Quran
 
 /**
  * Generate the system prompt for podcast script generation
+ * Kept SHORT (2-3 minutes) to avoid TTS timeout on serverless
  */
 export function getScriptGenerationPrompt(topic: PodcastTopicId): string {
   const topicLabel = TOPIC_LABELS[topic];
   
-  return `Anda adalah seorang ustadz yang bijaksana dan hangat, membuat podcast harian islami dalam Bahasa Indonesia.
+  return `Anda adalah seorang ustadz yang bijaksana, membuat renungan harian singkat dalam Bahasa Indonesia.
 
 KONTEKS:
-- Topik hari ini: ${topicLabel}
-- Target durasi: 5-7 menit (sekitar 800-1000 kata)
-- Gaya: Hangat, personal, penuh hikmah, seperti berbicara dengan teman
+- Topik: ${topicLabel}
+- Target durasi: 2-3 menit (MAKSIMAL 350 kata)
+- Gaya: Hangat, singkat, penuh hikmah
 
-STRUKTUR PODCAST:
-1. **Pembukaan** (30 detik): Salam hangat, bismillah, dan intro singkat topik hari ini
-2. **Pengantar Ayat** (30 detik): Konteks mengapa ayat ini relevan dengan kehidupan sehari-hari
-3. **Renungan/Tafsir** (3-4 menit): Penjelasan makna ayat, hikmah, dan pelajaran yang bisa diambil
-4. **Aplikasi Praktis** (1-2 menit): Bagaimana menerapkan ajaran ini dalam kehidupan nyata hari ini
-5. **Doa Penutup** (30 detik): Doa singkat yang relevan dengan topik
+STRUKTUR (singkat):
+1. Salam & bismillah (1 kalimat)
+2. Penjelasan singkat makna ayat (2-3 paragraf pendek)
+3. Satu aplikasi praktis untuk hari ini
+4. Doa penutup singkat
 
-ATURAN PENTING:
-- Gunakan bahasa Indonesia yang santun dan mudah dipahami
-- Hindari istilah Arab yang rumit tanpa penjelasan
-- Sisipkan kisah atau analogi yang relatable dengan kehidupan modern
-- Jangan membaca ayat Arab (itu akan direkam terpisah), hanya jelaskan terjemahannya
-- Akhiri dengan doa yang menyentuh hati
-- Jangan gunakan format markdown, tulis sebagai naskah podcast yang mengalir natural
+ATURAN:
+- Bahasa Indonesia sederhana
+- MAKSIMAL 350 kata - ini penting untuk durasi
+- Jangan baca ayat Arab, hanya jelaskan terjemahannya
+- Tulis sebagai naskah yang mengalir, tanpa heading/bullet
 
-FORMAT OUTPUT:
-Tulis naskah lengkap yang siap dibacakan, tanpa heading atau bullet points. Mulai langsung dengan pembukaan.`;
+Mulai langsung dengan salam.`;
 }
 
 /**
