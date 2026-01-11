@@ -14,10 +14,17 @@ import type { PodcastTopicId } from "@/stores/user-store";
 
 export const maxDuration = 60;
 
-// Initialize QStash client
-const qstash = new Client({
-  token: process.env.QSTASH_TOKEN || "",
-});
+// Initialize QStash client lazily to ensure env vars are loaded
+const getQStashClient = () => {
+  const token = process.env.QSTASH_TOKEN;
+  console.log("[QStash] Token present:", !!token, "Length:", token?.length);
+  console.log("[QStash] Token first 20 chars:", token?.slice(0, 20));
+  console.log("[QStash] All env keys:", Object.keys(process.env).filter(k => k.includes("QSTASH")));
+  if (!token) {
+    throw new Error("QSTASH_TOKEN not configured");
+  }
+  return new Client({ token });
+};
 
 interface GenerateRequest {
   topics: PodcastTopicId[];
@@ -101,25 +108,31 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
     // Create job record
     await createJob(jobId, script);
 
-    // Queue TTS job in background via QStash
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
-    try {
-      await qstash.publishJSON({
-        url: `${baseUrl}/api/podcast/tts-worker`,
-        body: {
-          jobId,
-          text: script,
-          voice: "Aoede",
-        },
-        retries: 2,
-      });
-      console.log(`[Generate] Queued TTS job ${jobId}`);
-    } catch (qstashError) {
-      console.error("[Generate] QStash error:", qstashError);
-      // Continue anyway - user can still read the script
+    // Queue TTS job - use QStash in production, direct call in development
+    const isProduction = !!process.env.VERCEL_URL;
+    
+    if (isProduction) {
+      // Production: Use QStash for background processing
+      const baseUrl = `https://${process.env.VERCEL_URL}`;
+      try {
+        const qstash = getQStashClient();
+        await qstash.publishJSON({
+          url: `${baseUrl}/api/podcast/tts-worker`,
+          body: { jobId, text: script, voice: "Aoede" },
+          retries: 2,
+        });
+        console.log(`[Generate] Queued TTS job ${jobId} via QStash`);
+      } catch (qstashError) {
+        console.error("[Generate] QStash error:", qstashError);
+      }
+    } else {
+      // Development: Call TTS worker directly (non-blocking)
+      console.log(`[Generate] Calling TTS worker directly for job ${jobId}`);
+      fetch("http://localhost:3000/api/podcast/tts-worker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, text: script, voice: "Aoede" }),
+      }).catch(err => console.error("[Generate] Direct TTS call failed:", err));
     }
 
     const response: PodcastResponse = {
