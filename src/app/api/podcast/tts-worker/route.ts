@@ -3,11 +3,18 @@
  * Generates audio and saves to Vercel Blob
  */
 import { NextResponse } from "next/server";
+import { Receiver } from "@upstash/qstash";
 import { put } from "@vercel/blob";
 import { updateJob } from "@/lib/podcast/job-store";
 
 // Allow up to 5 minutes for background processing
 export const maxDuration = 300;
+
+// QStash signature verification
+const receiver = new Receiver({
+  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY || "",
+  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY || "",
+});
 
 interface TTSJobPayload {
   jobId: string;
@@ -90,6 +97,32 @@ async function handler(req: Request): Promise<Response> {
   }
 }
 
-// Export handler directly - QStash verification can be added later with signing keys
-// To enable: set QSTASH_CURRENT_SIGNING_KEY and QSTASH_NEXT_SIGNING_KEY
-export const POST = handler;
+// Wrap handler with QStash signature verification
+export async function POST(req: Request): Promise<Response> {
+  // Verify QStash signature in production
+  if (process.env.NODE_ENV === "production" && process.env.QSTASH_CURRENT_SIGNING_KEY) {
+    const signature = req.headers.get("upstash-signature");
+    const body = await req.text();
+    
+    try {
+      await receiver.verify({
+        signature: signature || "",
+        body,
+      });
+      
+      // Re-create request with body for handler
+      const newReq = new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body,
+      });
+      return handler(newReq);
+    } catch (error) {
+      console.error("[TTS Worker] Signature verification failed:", error);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+  }
+  
+  // In development, skip verification
+  return handler(req);
+}
