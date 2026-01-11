@@ -1,113 +1,178 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { BookOpen, MessageCircle, Star, Heart, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ActionCard } from "@/components/ui/action-card";
+import { PrayerTimesSection } from "@/components/prayer/prayer-times-widget";
+import { Footer } from "@/components/layout/footer";
+
+// Homepage JSON-LD structured data
+function HomeJsonLd() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Al-Quran Digital Indonesia",
+    alternateName: ["Quran Digital", "Al-Quran Online Indonesia"],
+    description:
+      "Baca Al-Quran online lengkap dengan terjemahan bahasa Indonesia. 114 surah, 6236 ayat dengan tafsir dan audio.",
+    url: "https://quran.example.com",
+    applicationCategory: "ReligiousApplication",
+    operatingSystem: "Any",
+    browserRequirements: "Requires JavaScript",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "IDR",
+    },
+    featureList: [
+      "114 Surah Al-Quran lengkap",
+      "Terjemahan Bahasa Indonesia dari Kemenag",
+      "Pencarian ayat",
+      "Asisten AI Islam",
+      "Teks Arab dan Latin",
+    ],
+    screenshot: "/api/og",
+    softwareVersion: "1.0",
+    author: {
+      "@type": "Organization",
+      name: "Al-Quran Digital Indonesia",
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background islamic-pattern">
-      <div className="min-h-screen">
-        {/* Hero Section */}
-        <header className="container mx-auto px-4 pt-16 pb-12">
-          <div className="text-center max-w-3xl mx-auto">
-            {/* Logo/Icon */}
-            <div className="w-28 h-28 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-[#FFDBBB] to-[#BADDFF] flex items-center justify-center shadow-xl shadow-[#496580]/20">
-              <div className="relative">
-                <Star className="w-14 h-14 text-[#496580]" fill="#496580" />
-                <Sparkles className="w-6 h-6 text-[#496580] absolute -top-1 -right-1" />
+    <>
+      <HomeJsonLd />
+      <div className="min-h-screen bg-white">
+        {/* Floating Header Bar */}
+        <header className="fixed top-4 left-4 right-4 z-50">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white/60 backdrop-blur-md border border-white/50 rounded-2xl shadow-sm px-4 py-3">
+              <div className="flex items-center justify-between">
+                {/* Left: Logo + Title */}
+                <Link href="/" className="flex items-center gap-3">
+                  <div className="w-9 h-9 border border-sky-200 rounded-lg flex items-center justify-center bg-sky-50">
+                    <span className="font-bold text-sm" style={{ color: '#496580' }}>ق</span>
+                  </div>
+                  <div>
+                    <h1 className="text-base font-bold tracking-tight text-slate-900">
+                      Al-Quran Digital
+                    </h1>
+                    <p 
+                      className="text-xs -mt-0.5" 
+                      lang="ar" 
+                      dir="rtl"
+                      style={{ fontFamily: '"Scheherazade New", serif', color: '#496580' }}
+                    >
+                      القرآن الكريم
+                    </p>
+                  </div>
+                </Link>
+                
+                {/* Right: Quick Nav */}
+                <nav className="hidden md:flex items-center gap-1">
+                  <Link 
+                    href="/quran" 
+                    className="px-3 py-1.5 text-sm text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
+                  >
+                    Daftar Surah
+                  </Link>
+                  <Link 
+                    href="/quran/search" 
+                    className="px-3 py-1.5 text-sm text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
+                  >
+                    Cari Ayat
+                  </Link>
+                  <Link 
+                    href="/chat" 
+                    className="px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors hover:opacity-90"
+                    style={{ backgroundColor: '#496580' }}
+                  >
+                    Asisten AI
+                  </Link>
+                </nav>
               </div>
             </div>
-
-            {/* Title */}
-            <h1 className="text-5xl md:text-6xl font-bold mb-4">
-              <span className="gradient-text">Al-Quran Digital</span>
-          </h1>
-            <p className="arabic-text text-3xl text-[#496580] dark:text-[#FFDBBB] mb-6">
-              القرآن الكريم
-            </p>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Baca Al-Quran dengan terjemahan bahasa Indonesia dan dapatkan
-              panduan Islam dari asisten AI yang terpercaya
-          </p>
-        </div>
+          </div>
         </header>
 
-        {/* Main Features */}
-        <main className="container mx-auto px-4 py-8">
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Quran Reader Card */}
-            <Link href="/quran" className="block group">
-              <Card className="h-full p-8 bg-gradient-to-br from-[#BADDFF]/30 to-[#BAFFF5]/20 border-[#BADDFF]/50 hover:border-[#496580]/50 hover:shadow-xl hover:shadow-[#BADDFF]/20 transition-all duration-500 cursor-pointer overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#BADDFF]/30 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#BADDFF] to-[#BAFFF5] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                    <BookOpen className="w-8 h-8 text-[#496580]" />
-                  </div>
+        {/* Hero Section with Islamic Pattern Background */}
+        <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden pt-24 pb-12">
+          {/* Background Image */}
+          <Image
+            src="/islamic-pattern.jpg"
+            alt=""
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+          {/* Gradient Overlay - Minimal to show more of the pattern */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/90" />
+          
+          {/* Hero Content */}
+          <div className="relative z-10 text-center px-4 max-w-2xl mx-auto">
+            {/* Text container with frosted glass effect for legibility */}
+            <div className="inline-block bg-white/70 backdrop-blur-sm rounded-2xl px-8 py-8 shadow-lg">
+              <p 
+                className="text-4xl md:text-5xl mb-5 font-medium drop-shadow-sm" 
+                lang="ar" 
+                dir="rtl"
+                style={{ fontFamily: '"Scheherazade New", serif', color: '#496580' }}
+              >
+                بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+              </p>
+              <p className="text-slate-700 text-sm md:text-base font-medium">
+                Dengan nama Allah Yang Maha Pengasih, Maha Penyayang
+              </p>
+            </div>
+          </div>
+        </section>
 
-                  <h2 className="text-2xl font-bold text-foreground mb-3 group-hover:text-[#496580] transition-colors">
-                    Baca Al-Quran
-                  </h2>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    Jelajahi 114 surah dengan teks Arab, terjemahan bahasa
-                    Indonesia dari Kementerian Agama, dan fitur pencarian
-                  </p>
+        {/* Main Content Section */}
+        <main className="px-4 py-8 bg-white">
+          {/* Prayer Times Widget */}
+          <div className="max-w-3xl mx-auto w-full mb-8">
+            <PrayerTimesSection />
+          </div>
+          
+          {/* 2-Column Grid - Royal Blue Theme */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto w-full">
+            {/* Read Quran Card */}
+            <ActionCard
+              variant="royal"
+              href="/quran"
+              icon="BookOpen"
+              title="Baca Al-Quran"
+              description="Jelajahi 114 surah dengan teks Arab dan terjemahan bahasa Indonesia dari Kemenag."
+              tags={["114 Surah", "6236 Ayat"]}
+              cta="Mulai membaca"
+            />
 
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#BADDFF]/50 text-[#496580]">
-                      114 Surah
-                    </span>
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#BAFFF5]/50 text-[#496580]">
-                      6236 Ayat
-                    </span>
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#FFDBBB]/50 text-[#496580]">
-                      Terjemahan Indonesia
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-
-            {/* AI Chat Card */}
-            <Link href="/chat" className="block group">
-              <Card className="h-full p-8 bg-gradient-to-br from-[#FFDBBB]/30 to-[#BADDFF]/20 border-[#FFDBBB]/50 hover:border-[#496580]/50 hover:shadow-xl hover:shadow-[#FFDBBB]/20 transition-all duration-500 cursor-pointer overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-[#FFDBBB]/30 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FFDBBB] to-[#BADDFF] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                    <MessageCircle className="w-8 h-8 text-[#496580]" />
-                  </div>
-
-                  <h2 className="text-2xl font-bold text-foreground mb-3 group-hover:text-[#496580] transition-colors">
-                    Asisten Islam AI
-                  </h2>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    Tanyakan tentang tafsir, hukum Islam, panduan ibadah, dan
-                    berbagai pertanyaan seputar ajaran Islam
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#FFDBBB]/50 text-[#496580]">
-                      Berbasis AI
-                    </span>
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#BADDFF]/50 text-[#496580]">
-                      Bahasa Indonesia
-                    </span>
-                    <span className="px-4 py-1.5 text-xs font-medium rounded-full bg-[#BAFFF5]/50 text-[#496580]">
-                      24/7 Tersedia
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
+            {/* AI Assistant Card */}
+            <ActionCard
+              variant="royal"
+              href="/chat"
+              icon="MessageCircle"
+              title="Asisten Islam AI"
+              description="Tanyakan tentang tafsir, hukum Islam, dan panduan ibadah dengan AI terpercaya."
+              tags={["Berbasis AI", "Bahasa Indonesia"]}
+              cta="Mulai bertanya"
+            />
           </div>
 
-          {/* Quick Actions */}
-          <div className="max-w-5xl mx-auto mt-16">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-6 text-center uppercase tracking-wider">
+          {/* Quick Links */}
+          <div className="max-w-3xl mx-auto w-full mt-12">
+            <p className="text-xs font-medium text-stone-400 mb-4 text-center uppercase tracking-widest">
               Surah Populer
-            </h3>
-            <div className="flex flex-wrap justify-center gap-3">
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
               {[
                 { id: 1, name: "Al-Fatihah" },
                 { id: 36, name: "Yasin" },
@@ -116,32 +181,58 @@ export default function HomePage() {
                 { id: 18, name: "Al-Kahf" },
                 { id: 112, name: "Al-Ikhlas" },
               ].map((surah) => (
-                <Link key={surah.id} href={`/quran/${surah.id}`}>
-                  <Button
-                    variant="outline"
-                    className="bg-card/80 border-border hover:bg-[#BADDFF]/30 hover:border-[#496580]/30 hover:text-[#496580] transition-all"
-                  >
-                    {surah.name}
-                  </Button>
+                <Link 
+                  key={surah.id} 
+                  href={`/quran/${surah.id}`}
+                  className="px-3 py-1.5 text-sm text-slate-600 border border-stone-200 rounded-md hover:border-sky-300 hover:text-sky-700 hover:bg-sky-50 transition-colors"
+                >
+                  {surah.name}
                 </Link>
               ))}
             </div>
-        </div>
-      </main>
+          </div>
+
+          {/* Popular Verses */}
+          <div className="max-w-3xl mx-auto w-full mt-10">
+            <p className="text-xs font-medium text-stone-400 mb-4 text-center uppercase tracking-widest">
+              Ayat Populer
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Link 
+                href="/quran/2/255" 
+                className="p-3 border border-stone-200 rounded-lg bg-white hover:border-sky-300 hover:bg-sky-50 transition-colors text-center group"
+              >
+                <p className="font-medium text-sm text-slate-900 group-hover:text-sky-700 transition-colors">Ayatul Kursi</p>
+                <p className="text-xs text-slate-400 mt-0.5">Al-Baqarah:255</p>
+              </Link>
+              <Link 
+                href="/quran/2/286" 
+                className="p-3 border border-stone-200 rounded-lg bg-white hover:border-sky-300 hover:bg-sky-50 transition-colors text-center group"
+              >
+                <p className="font-medium text-sm text-slate-900 group-hover:text-sky-700 transition-colors">Penutup Baqarah</p>
+                <p className="text-xs text-slate-400 mt-0.5">Al-Baqarah:286</p>
+              </Link>
+              <Link 
+                href="/quran/112/1" 
+                className="p-3 border border-stone-200 rounded-lg bg-white hover:border-sky-300 hover:bg-sky-50 transition-colors text-center group"
+              >
+                <p className="font-medium text-sm text-slate-900 group-hover:text-sky-700 transition-colors">Al-Ikhlas</p>
+                <p className="text-xs text-slate-400 mt-0.5">Surah 112</p>
+              </Link>
+              <Link 
+                href="/quran/1/1" 
+                className="p-3 border border-stone-200 rounded-lg bg-white hover:border-sky-300 hover:bg-sky-50 transition-colors text-center group"
+              >
+                <p className="font-medium text-sm text-slate-900 group-hover:text-sky-700 transition-colors">Al-Fatihah</p>
+                <p className="text-xs text-slate-400 mt-0.5">Pembukaan</p>
+              </Link>
+            </div>
+          </div>
+        </main>
 
         {/* Footer */}
-        <footer className="container mx-auto px-4 py-12 mt-12 border-t border-border/50">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Dibuat dengan <Heart className="w-4 h-4 inline text-[#FFDBBB]" fill="#FFDBBB" /> untuk
-              umat Islam Indonesia
-            </p>
-            <p className="text-xs text-muted-foreground/70">
-              Data Al-Quran dari Quran.com API • Terjemahan Kementerian Agama RI
-            </p>
-          </div>
-        </footer>
+        <Footer />
       </div>
-    </div>
+    </>
   );
 }
