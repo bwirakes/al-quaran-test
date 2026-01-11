@@ -10,6 +10,42 @@ import { updateJob } from "@/lib/podcast/job-store";
 // Allow up to 5 minutes for background processing
 export const maxDuration = 300;
 
+/**
+ * Create WAV header for raw PCM data
+ * Gemini TTS returns 24kHz, 16-bit, mono PCM
+ */
+function createWavHeader(dataLength: number): Buffer {
+  const sampleRate = 24000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const fileSize = 36 + dataLength;
+
+  const header = Buffer.alloc(44);
+  
+  // RIFF header
+  header.write("RIFF", 0);
+  header.writeUInt32LE(fileSize, 4);
+  header.write("WAVE", 8);
+  
+  // fmt subchunk
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16); // Subchunk1Size (16 for PCM)
+  header.writeUInt16LE(1, 20); // AudioFormat (1 for PCM)
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  
+  // data subchunk
+  header.write("data", 36);
+  header.writeUInt32LE(dataLength, 40);
+
+  return header;
+}
+
 // QStash signature verification
 const receiver = new Receiver({
   currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY || "",
@@ -72,11 +108,16 @@ async function handler(req: Request): Promise<Response> {
       return NextResponse.json({ success: false, error: "No audio" }, { status: 500 });
     }
 
-    // Save audio to Vercel Blob
-    const audioBuffer = Buffer.from(audioData, "base64");
-    const filename = `podcast-${jobId}.wav`;
+    // Convert raw PCM to WAV with proper header
+    const pcmBuffer = Buffer.from(audioData, "base64");
+    const wavHeader = createWavHeader(pcmBuffer.length);
+    const wavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
+    
+    console.log(`[TTS Worker] PCM size: ${pcmBuffer.length}, WAV size: ${wavBuffer.length}`);
 
-    const blob = await put(`podcasts/${filename}`, audioBuffer, {
+    // Save audio to Vercel Blob
+    const filename = `podcast-${jobId}.wav`;
+    const blob = await put(`podcasts/${filename}`, wavBuffer, {
       access: "public",
       addRandomSuffix: false,
       contentType: "audio/wav",
