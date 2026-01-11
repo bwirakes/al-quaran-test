@@ -38,10 +38,6 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-peach: var(--peach);
-  --color-sky: var(--sky);
-  --color-mint: var(--mint);
-  --color-slate: var(--slate);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -49,91 +45,115 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  
+  /* Islamic Theme Colors - Semantic Tokens */
+  /* Theme A: Jannah (Nature / Quran Reader) */
+  --color-jannah-surface: #ECFDF5;
+  --color-jannah-border: #A7F3D0;
+  --color-jannah-border-hover: #10B981;
+  --color-jannah-icon-bg: #D1FAE5;
+  --color-jannah-icon: #047857;
+  --color-jannah-text: #022C22;
+  --color-jannah-subtext: #065F46;
+  
+  /* Theme B: Iznik (Art / AI Assistant) */
+  --color-iznik-surface: #ECFEFF;
+  --color-iznik-border: #A5F3FC;
+  --color-iznik-border-hover: #06B6D4;
+  --color-iznik-icon-bg: #CFFAFE;
+  --color-iznik-icon: #0E7490;
+  --color-iznik-text: #083344;
+  --color-iznik-subtext: #155E75;
+  
+  /* Theme C: Medina (Earth / Tafsir & History) */
+  --color-medina-surface: #FAFAF9;
+  --color-medina-border: #E7E5E4;
+  --color-medina-border-hover: #78716C;
+  --color-medina-icon-bg: #F5F5F4;
+  --color-medina-icon: #57534E;
+  --color-medina-text: #1C1917;
+  --color-medina-subtext: #44403C;
+  
+  /* Theme D: Noor (Night / Dark Mode) */
+  --color-noor-surface: #020617;
+  --color-noor-border: #1E293B;
+  --color-noor-border-hover: #FBBF24;
+  --color-noor-icon-bg: #0F172A;
+  --color-noor-icon: #FBBF24;
+  --color-noor-text: #F8FAFC;
+  --color-noor-subtext: #CBD5E1;
 }
 
-/* Peach Skyline Color Palette - Light Mode */
-/* #FFDBBB - Peach */
-/* #BADDFF - Light Blue/Sky */
-/* #BAFFF5 - Mint/Cyan */
-/* #496580 - Slate Blue */
-
+/* Swiss International Style - Monochrome Zinc Palette (Base) */
 :root {
   --radius: 0.625rem;
-  /* Light mode - soft and warm */
-  --background: #fefcfa;
-  --foreground: #1e293b;
+  /* Light mode - Clean white with zinc accents */
+  --background: #ffffff;
+  --foreground: #18181b;
   --card: #ffffff;
-  --card-foreground: #1e293b;
+  --card-foreground: #18181b;
   --popover: #ffffff;
-  --popover-foreground: #1e293b;
-  --primary: #496580;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
   --primary-foreground: #ffffff;
-  --secondary: #BADDFF;
-  --secondary-foreground: #1e293b;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #BAFFF5;
-  --accent-foreground: #1e293b;
-  --destructive: #ef4444;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #496580;
-  --chart-1: #FFDBBB;
-  --chart-2: #BADDFF;
-  --chart-3: #BAFFF5;
-  --chart-4: #496580;
-  --chart-5: #fbbf24;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #18181b;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
+  --chart-1: #18181b;
+  --chart-2: #71717a;
+  --chart-3: #a1a1aa;
+  --chart-4: #d4d4d8;
+  --chart-5: #f4f4f5;
   --sidebar: #ffffff;
-  --sidebar-foreground: #1e293b;
-  --sidebar-primary: #496580;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #BADDFF;
-  --sidebar-accent-foreground: #1e293b;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #496580;
-  --peach: #FFDBBB;
-  --sky: #BADDFF;
-  --mint: #BAFFF5;
-  --slate: #496580;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #18181b;
 }
 
 .dark {
-  /* Dark mode - deep and calm */
-  --background: #1a2332;
-  --foreground: #f1f5f9;
-  --card: #243044;
-  --card-foreground: #f1f5f9;
-  --popover: #243044;
-  --popover-foreground: #f1f5f9;
-  --primary: #FFDBBB;
-  --primary-foreground: #1a2332;
-  --secondary: #3a4a5e;
-  --secondary-foreground: #f1f5f9;
-  --muted: #2d3d52;
-  --muted-foreground: #94a3b8;
-  --accent: #BAFFF5;
-  --accent-foreground: #1a2332;
-  --destructive: #f87171;
-  --border: #3a4a5e;
-  --input: #3a4a5e;
-  --ring: #FFDBBB;
-  --chart-1: #FFDBBB;
-  --chart-2: #BADDFF;
-  --chart-3: #BAFFF5;
-  --chart-4: #496580;
-  --chart-5: #fbbf24;
-  --sidebar: #1e2a3a;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #FFDBBB;
-  --sidebar-primary-foreground: #1a2332;
-  --sidebar-accent: #3a4a5e;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #3a4a5e;
-  --sidebar-ring: #FFDBBB;
-  --peach: #FFDBBB;
-  --sky: #BADDFF;
-  --mint: #BAFFF5;
-  --slate: #496580;
+  /* Dark mode - Noor Theme */
+  --background: #020617;
+  --foreground: #F8FAFC;
+  --card: #0F172A;
+  --card-foreground: #F8FAFC;
+  --popover: #0F172A;
+  --popover-foreground: #F8FAFC;
+  --primary: #FBBF24;
+  --primary-foreground: #020617;
+  --secondary: #1E293B;
+  --secondary-foreground: #F8FAFC;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #1E293B;
+  --accent-foreground: #F8FAFC;
+  --destructive: #EF4444;
+  --border: #1E293B;
+  --input: #1E293B;
+  --ring: #FBBF24;
+  --chart-1: #FBBF24;
+  --chart-2: #F59E0B;
+  --chart-3: #D97706;
+  --chart-4: #B45309;
+  --chart-5: #92400E;
+  --sidebar: #020617;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #FBBF24;
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #F8FAFC;
+  --sidebar-border: #1E293B;
+  --sidebar-ring: #FBBF24;
 }
 
 @layer base {
@@ -145,67 +165,30 @@
   }
 }
 
-/* Arabic text styling */
+/* Arabic text styling - Clean and crisp */
 .arabic-text {
   font-family: "Scheherazade New", "Traditional Arabic", "Arabic Typesetting", serif;
   direction: rtl;
   line-height: 2.2;
 }
 
-/* Gradient text using Peach Skyline colors */
-.gradient-text {
-  background: linear-gradient(135deg, #496580, #FFDBBB);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gold-text {
-  background: linear-gradient(135deg, #c9a066, #FFDBBB);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Islamic geometric pattern with new colors - Light mode */
-.islamic-pattern {
-  background-color: var(--background);
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(186, 221, 255, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(186, 255, 245, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(255, 219, 187, 0.1) 0%, transparent 70%);
-}
-
-/* Soft gradient backgrounds */
-.gradient-peach {
-  background: linear-gradient(135deg, rgba(255, 219, 187, 0.4), rgba(255, 219, 187, 0.1));
-}
-
-.gradient-sky {
-  background: linear-gradient(135deg, rgba(186, 221, 255, 0.4), rgba(186, 221, 255, 0.1));
-}
-
-.gradient-mint {
-  background: linear-gradient(135deg, rgba(186, 255, 245, 0.4), rgba(186, 255, 245, 0.1));
-}
-
-/* Scrollbar styling */
+/* Scrollbar styling - Minimal */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: #d4d4d8;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: #a1a1aa;
 }
 
 /* Animation for loading states */
@@ -221,9 +204,9 @@
 .shimmer {
   background: linear-gradient(
     90deg,
-    var(--muted) 25%,
-    var(--accent) 50%,
-    var(--muted) 75%
+    #f4f4f5 25%,
+    #e4e4e7 50%,
+    #f4f4f5 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

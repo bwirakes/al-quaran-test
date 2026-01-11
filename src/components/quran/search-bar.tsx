@@ -2,8 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
@@ -43,30 +41,30 @@ export function SearchBar({
   return (
     <div className={`relative flex gap-2 ${className}`}>
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+        <input
           type="text"
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="pl-10 pr-10 bg-card/80 border-border/50 focus:border-[#496580]/50 focus:bg-card transition-all"
+          className="w-full h-10 pl-10 pr-10 border border-zinc-200 rounded-lg bg-white text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400 transition-colors"
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" strokeWidth={1.5} />
           </button>
         )}
       </div>
-      <Button
+      <button
         onClick={handleSearch}
-        className="bg-gradient-to-r from-[#496580] to-[#3a5068] hover:from-[#3a5068] hover:to-[#2d4052] text-white"
+        className="h-10 px-4 bg-zinc-900 text-white rounded-lg text-sm font-medium hover:bg-zinc-800 transition-colors"
       >
         Cari
-      </Button>
+      </button>
     </div>
   );
 }
