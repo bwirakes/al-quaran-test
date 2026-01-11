@@ -261,7 +261,7 @@ export default function PodcastPage() {
 
           // Update history with audio URL
           updatePodcastAudioUrl(podcastId, job.audioUrl);
-          setGenerationStep("");
+          setGenerationStep("✅ Audio siap! Klik tombol di bawah untuk memutar.");
           setIsAudioProcessing(false);
           pollingRef.current = false;
 
@@ -371,12 +371,13 @@ export default function PodcastPage() {
         audioUrl: null,
       });
 
-      setViewState("playing");
+      // Stay on generating view - don't auto-redirect
+      // User can read the script while waiting
+      setGenerationStep("Membuat audio... (1-2 menit)");
 
       // Poll for audio completion in background
       const jobId = generateData.data.jobId;
       if (jobId) {
-        setGenerationStep("Audio sedang diproses...");
         pollForAudio(jobId, podcastId);
       }
     } catch (err) {
@@ -679,26 +680,128 @@ export default function PodcastPage() {
     );
   }
 
-  // Generating state
+  // Generating state - shows script while audio is being created
   if (viewState === "generating") {
     return (
       <div className="min-h-screen bg-white">
         <PageHeader />
-        <main className="pt-24 pb-12 px-4 flex items-center justify-center min-h-[70vh]">
-          <div className="text-center max-w-md">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center border border-sky-200">
-              <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Menyiapkan Renungan</h2>
-            <p className="text-slate-600 mb-4">{generationStep}</p>
-            <div className="w-full max-w-xs mx-auto h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style={{ width: '70%' }} />
-            </div>
-            <p className="text-xs text-slate-400 mt-6">
-              Sebentar lagi selesai... ⏳
-            </p>
+        <main className="pt-24 pb-12 px-4">
+          <div className="max-w-3xl mx-auto">
+            {/* Progress Header */}
+            {audioData?.audioUrl && !audioData.scriptOnly ? (
+              // Audio Ready State
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center border border-emerald-200 flex-shrink-0">
+                    <span className="text-3xl">✅</span>
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-bold text-slate-900 mb-1">
+                      {podcastData ? podcastData.title : "Podcast Siap!"}
+                    </h2>
+                    <p className="text-sm text-emerald-700">Audio sudah siap diputar!</p>
+                    <div className="mt-2 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" style={{ width: '100%' }} />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-4 text-center">
+                  🎉 Klik tombol "Putar Podcast" di bawah untuk mendengarkan.
+                </p>
+              </div>
+            ) : (
+              // Still Processing State
+              <div className="bg-sky-50 border border-sky-200 rounded-2xl p-6 mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sky-100 to-sky-200 flex items-center justify-center border border-sky-200 flex-shrink-0">
+                    <div className="w-6 h-6 border-3 border-sky-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-bold text-slate-900 mb-1">
+                      {podcastData ? podcastData.title : "Menyiapkan Renungan"}
+                    </h2>
+                    <p className="text-sm text-sky-700">{generationStep}</p>
+                    <div className="mt-2 h-1.5 bg-sky-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full animate-pulse" style={{ width: podcastData ? '60%' : '30%' }} />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mt-4 text-center">
+                  ⏳ Audio membutuhkan waktu 1-2 menit. Anda bisa membaca naskah di bawah sambil menunggu.
+                </p>
+              </div>
+            )}
+
+            {/* Script Content (if available) */}
+            {podcastData && (
+              <>
+                {/* Verse Card */}
+                {podcastData.verse.arabic && (
+                  <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+                    <p className="text-[#496580] text-sm font-medium mb-3">
+                      QS. {podcastData.verse.verseKey}
+                    </p>
+                    <p 
+                      className="text-2xl text-slate-900 mb-4 leading-relaxed text-right"
+                      dir="rtl"
+                      lang="ar"
+                      style={{ fontFamily: '"Scheherazade New", serif' }}
+                    >
+                      {podcastData.verse.arabic}
+                    </p>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      {podcastData.verse.translation}
+                    </p>
+                  </div>
+                )}
+
+                {/* Script */}
+                <div className="bg-white border border-stone-200 rounded-xl p-6 mb-6">
+                  <h3 className="text-sm font-semibold text-[#496580] mb-4 flex items-center gap-2">
+                    <span>📜</span> Naskah Renungan
+                  </h3>
+                  <div className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+                    {podcastData.script}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-center gap-4">
+                  {audioData?.audioUrl && !audioData.scriptOnly ? (
+                    <button
+                      onClick={() => setViewState("playing")}
+                      className="px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-medium rounded-lg transition-all shadow-lg flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      Putar Podcast
+                    </button>
+                  ) : (
+                    <div className="px-6 py-3 bg-slate-100 text-slate-500 font-medium rounded-lg flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                      Menunggu audio...
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setViewState("dashboard")}
+                    className="px-6 py-2.5 border border-stone-200 hover:bg-slate-50 text-slate-700 font-medium rounded-lg transition-colors"
+                  >
+                    Kembali
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Loading state when no script yet */}
+            {!podcastData && (
+              <div className="text-center py-12">
+                <p className="text-slate-500">Sedang mencari ayat yang relevan...</p>
+              </div>
+            )}
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
