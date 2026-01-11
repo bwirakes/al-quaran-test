@@ -269,6 +269,22 @@ export function useUserStore() {
     return user.podcastPreferences.history.filter((p) => p.isSaved);
   }, [user.podcastPreferences.history]);
 
+  // Update podcast audio URL (when background TTS completes)
+  const updatePodcastAudioUrl = useCallback((podcastId: string, audioUrl: string) => {
+    setUser((prev) => ({
+      ...prev,
+      podcastPreferences: {
+        ...prev.podcastPreferences,
+        history: prev.podcastPreferences.history.map((p) =>
+          p.id === podcastId ? { ...p, audioUrl } : p
+        ),
+        cachedPodcast: prev.podcastPreferences.cachedPodcast
+          ? { ...prev.podcastPreferences.cachedPodcast, audioUrl }
+          : null,
+      },
+    }));
+  }, []);
+
   return {
     user,
     updateInventory,
@@ -282,5 +298,6 @@ export function useUserStore() {
     toggleSavePodcast,
     deletePodcastFromHistory,
     getSavedPodcasts,
+    updatePodcastAudioUrl,
   };
 }

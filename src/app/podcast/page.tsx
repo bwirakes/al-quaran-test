@@ -164,6 +164,7 @@ export default function PodcastPage() {
     addPodcastToHistory,
     toggleSavePodcast,
     deletePodcastFromHistory,
+    updatePodcastAudioUrl,
   } = useUserStore();
   
   const [viewState, setViewState] = useState<ViewState>("loading");
@@ -197,6 +198,61 @@ export default function PodcastPage() {
     setShowTopicEditor(false);
   };
 
+  // Poll for audio completion (background TTS via QStash)
+  const pollForAudio = async (jobId: string, podcastId: string) => {
+    const maxAttempts = 60; // 5 minutes max (5s intervals)
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/podcast/status/${jobId}`);
+        if (!res.ok) return;
+
+        const job = await res.json();
+        
+        if (job.status === "completed" && job.audioUrl) {
+          // Audio is ready!
+          setAudioData({
+            audio: null,
+            audioUrl: job.audioUrl,
+            mimeType: "audio/wav",
+            scriptOnly: false,
+            generatedAt: new Date().toISOString(),
+          });
+
+          // Update history with audio URL
+          updatePodcastAudioUrl(podcastId, job.audioUrl);
+          setGenerationStep("");
+          return; // Done!
+        }
+
+        if (job.status === "failed") {
+          console.warn("[Podcast] TTS job failed:", job.error);
+          setGenerationStep("");
+          return; // Stop polling
+        }
+
+        // Still processing - continue polling
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 5000); // Poll every 5 seconds
+        } else {
+          console.warn("[Podcast] Audio generation timed out");
+          setGenerationStep("");
+        }
+      } catch (error) {
+        console.error("[Podcast] Poll error:", error);
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 5000);
+        }
+      }
+    };
+
+    // Start polling after a short delay
+    setTimeout(poll, 3000);
+  };
+
   const generatePodcast = async () => {
     const topics = user.podcastPreferences?.selectedTopics ?? [];
     if (topics.length === 0) {
@@ -221,61 +277,45 @@ export default function PodcastPage() {
       const generateData = await generateRes.json();
       if (!generateData.success) throw new Error(generateData.error || "Gagal membuat naskah podcast");
 
+      // Show script immediately - audio is generating in background
       setPodcastData(generateData.data);
-      setGenerationStep("Menghasilkan audio...");
-
-      const speechRes = await fetch("/api/podcast/speech", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: generateData.data.script, voiceStyle: "warm" }),
+      
+      // Set initial audio state (script only while processing)
+      setAudioData({
+        audio: null,
+        audioUrl: null,
+        mimeType: "audio/wav",
+        scriptOnly: true,
+        message: "Audio sedang diproses...",
+        generatedAt: new Date().toISOString(),
       });
 
-      if (!speechRes.ok) throw new Error("Gagal menghasilkan audio");
-
-      const speechData = await speechRes.json();
-      if (!speechData.success) throw new Error(speechData.error || "Gagal menghasilkan audio");
-
-      let finalAudioData = speechData.data;
-
-      if (speechData.data.audio && !speechData.data.scriptOnly) {
-        setGenerationStep("Menyimpan audio...");
-        try {
-          const saveRes = await fetch("/api/podcast/save-audio", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ audioBase64: speechData.data.audio }),
-          });
-          if (saveRes.ok) {
-            const saveData = await saveRes.json();
-            if (saveData.success) {
-              finalAudioData = { ...speechData.data, audioUrl: saveData.data.url, audio: null };
-            }
-          }
-        } catch (saveErr) {
-          console.warn("[Podcast] Could not save audio file:", saveErr);
-        }
-      }
-
-      setAudioData(finalAudioData);
-      
-      // Add to history (minimal data to avoid localStorage quota)
+      // Add to history immediately
       const podcastId = addPodcastToHistory({
         title: generateData.data.title,
         topic: generateData.data.topic,
         verseKey: generateData.data.verse.verseKey,
-        audioUrl: finalAudioData.audioUrl || null,
+        audioUrl: null, // Will be updated when ready
         duration: generateData.data.estimatedDuration,
       });
       setCurrentPodcastId(podcastId);
-      
-      // Cache minimal metadata only
+
+      // Cache minimal metadata
       cachePodcast({
         title: generateData.data.title,
         verseKey: generateData.data.verse.verseKey,
         topic: generateData.data.topic,
-        audioUrl: finalAudioData.audioUrl || null,
+        audioUrl: null,
       });
+
       setViewState("playing");
+
+      // Poll for audio completion in background
+      const jobId = generateData.data.jobId;
+      if (jobId) {
+        setGenerationStep("Audio sedang diproses...");
+        pollForAudio(jobId, podcastId);
+      }
     } catch (err) {
       console.error("Podcast generation error:", err);
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");

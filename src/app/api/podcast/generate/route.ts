@@ -1,5 +1,6 @@
 import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
+import { Client } from "@upstash/qstash";
 import { 
   findRelevantVerse, 
   getScriptGenerationPrompt, 
@@ -8,9 +9,15 @@ import {
   formatVerseForPodcast,
   type QuranVerse,
 } from "@/lib/podcast/script-generator";
+import { createJob } from "@/lib/podcast/job-store";
 import type { PodcastTopicId } from "@/stores/user-store";
 
 export const maxDuration = 60;
+
+// Initialize QStash client
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN || "",
+});
 
 interface GenerateRequest {
   topics: PodcastTopicId[];
@@ -25,6 +32,7 @@ interface PodcastResponse {
     script: string;
     estimatedDuration: number;
     generatedAt: string;
+    jobId: string; // For polling TTS status
   };
   error?: string;
 }
@@ -87,6 +95,33 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
 
     const title = `Renungan ${topicLabels[primaryTopic]} - ${verse.verseKey}`;
 
+    // Generate a job ID
+    const jobId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Create job record
+    await createJob(jobId, script);
+
+    // Queue TTS job in background via QStash
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+    try {
+      await qstash.publishJSON({
+        url: `${baseUrl}/api/podcast/tts-worker`,
+        body: {
+          jobId,
+          text: script,
+          voice: "Aoede",
+        },
+        retries: 2,
+      });
+      console.log(`[Generate] Queued TTS job ${jobId}`);
+    } catch (qstashError) {
+      console.error("[Generate] QStash error:", qstashError);
+      // Continue anyway - user can still read the script
+    }
+
     const response: PodcastResponse = {
       success: true,
       data: {
@@ -96,6 +131,7 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
         script,
         estimatedDuration: duration,
         generatedAt: new Date().toISOString(),
+        jobId,
       },
     };
 
