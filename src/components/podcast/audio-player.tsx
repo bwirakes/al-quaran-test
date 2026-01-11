@@ -30,6 +30,11 @@ export function AudioPlayer({
 
   const audioSrc = propAudioUrl || (audioData && mimeType ? `data:${mimeType};base64,${audioData}` : null);
 
+  // Log audio source for debugging
+  useEffect(() => {
+    console.log("[AudioPlayer] Source:", audioSrc ? audioSrc.substring(0, 100) + "..." : "null");
+  }, [audioSrc]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -99,7 +104,13 @@ export function AudioPlayer({
 
   const togglePlayPause = async () => {
     const audio = audioRef.current;
-    if (!audio || !audioSrc) return;
+    if (!audio) return;
+    
+    // Check if we have a valid audio source
+    if (!audioSrc) {
+      setError("Audio tidak tersedia");
+      return;
+    }
 
     setError(null);
 
@@ -109,11 +120,16 @@ export function AudioPlayer({
     } else {
       setIsLoading(true);
       try {
+        // Make sure the source is set
+        if (!audio.src || audio.src !== audioSrc) {
+          audio.src = audioSrc;
+          audio.load();
+        }
         await audio.play();
         setIsPlaying(true);
       } catch (err) {
         console.error("Play error:", err);
-        setError("Gagal memutar audio");
+        setError("Gagal memutar audio. File mungkin tidak tersedia.");
         setIsLoading(false);
       }
     }
@@ -146,9 +162,30 @@ export function AudioPlayer({
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // Show warning if no audio source
+  if (!audioSrc) {
+    return (
+      <div className="w-full">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
+          <div className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center border border-amber-200">
+              <span className="text-5xl">⚠️</span>
+            </div>
+            <h3 className="text-xl font-semibold text-slate-900 mb-1">{title}</h3>
+            {verseKey && (
+              <p className="text-sm text-[#496580] mb-4">QS. {verseKey}</p>
+            )}
+            <p className="text-sm text-amber-700">Audio tidak tersedia untuk podcast ini.</p>
+            <p className="text-xs text-slate-500 mt-2">Silakan buat podcast baru untuk mendapatkan audio.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      <audio ref={audioRef} src={audioSrc || undefined} preload="metadata" />
+      <audio ref={audioRef} src={audioSrc} preload="metadata" />
 
       <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
         {/* Header */}
