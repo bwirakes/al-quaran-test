@@ -2,9 +2,9 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { ArrowUp, Sparkles, User, ArrowLeft } from "lucide-react";
+import { ArrowUp, Sparkles, User, ArrowLeft, Square } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useEffect, useState, useMemo } from "react";
 
 function generateUUID(): string {
   return crypto.randomUUID();
@@ -25,6 +25,25 @@ export function ChatInterface() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [inputValue, setInputValue] = useState("");
 
+  // Memoize the transport to prevent recreation on each render
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        prepareSendMessagesRequest(request) {
+          const lastMessage = request.messages.at(-1);
+          return {
+            body: {
+              id: request.id,
+              message: lastMessage,
+              messages: request.messages,
+            },
+          };
+        },
+      }),
+    []
+  );
+
   const {
     messages,
     sendMessage,
@@ -33,19 +52,7 @@ export function ChatInterface() {
   } = useChat({
     id: chatId.current,
     generateId: generateUUID,
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      prepareSendMessagesRequest(request) {
-        const lastMessage = request.messages.at(-1);
-        return {
-          body: {
-            id: request.id,
-            message: lastMessage,
-            messages: request.messages,
-          },
-        };
-      },
-    }),
+    transport,
   });
 
   const scrollToBottom = useCallback(() => {
@@ -56,29 +63,36 @@ export function ChatInterface() {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Check if we can send a message (not currently streaming or submitted)
+  const canSend = status === "ready" || status === "error";
+  const isLoading = status === "streaming" || status === "submitted";
+
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!inputValue.trim() || status !== "ready") return;
+      if (!inputValue.trim() || !canSend) return;
 
       sendMessage({
         role: "user",
         parts: [{ type: "text", text: inputValue.trim() }],
       });
       setInputValue("");
+      
+      // Focus back to textarea after sending
+      setTimeout(() => textareaRef.current?.focus(), 100);
     },
-    [inputValue, sendMessage, status]
+    [inputValue, sendMessage, canSend]
   );
 
   const handleSuggestedQuestion = useCallback(
     (question: string) => {
-      if (status !== "ready") return;
+      if (!canSend) return;
       sendMessage({
         role: "user",
         parts: [{ type: "text", text: question }],
       });
     },
-    [sendMessage, status]
+    [sendMessage, canSend]
   );
 
   const handleKeyDown = useCallback(
@@ -91,12 +105,10 @@ export function ChatInterface() {
     [handleSubmit]
   );
 
-  const isLoading = status === "streaming" || status === "submitted";
-
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-b from-[#fefcfa] to-[#f8f5f0]">
+    <div className="flex h-dvh flex-col bg-gradient-to-b from-[#fefcfa] to-[#f8f5f0]">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border/40 bg-white/80 backdrop-blur-lg">
+      <header className="shrink-0 border-b border-border/40 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-3">
           <Link href="/" className="group">
             <button className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/50 transition-all hover:bg-secondary">
@@ -118,7 +130,7 @@ export function ChatInterface() {
       </header>
 
       {/* Messages Area */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl px-4 py-6">
           {messages.length === 0 ? (
             <WelcomeScreen onSelectQuestion={handleSuggestedQuestion} />
@@ -132,12 +144,12 @@ export function ChatInterface() {
               )}
             </div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
       </main>
 
       {/* Input Area */}
-      <footer className="sticky bottom-0 border-t border-border/40 bg-white/80 backdrop-blur-lg">
+      <footer className="shrink-0 border-t border-border/40 bg-white/80 backdrop-blur-lg">
         <div className="mx-auto max-w-4xl px-4 py-4">
           <form onSubmit={handleSubmit} className="relative">
             <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-white p-2 shadow-sm transition-all focus-within:border-primary/50 focus-within:shadow-md">
@@ -157,12 +169,12 @@ export function ChatInterface() {
                   onClick={stop}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive text-white transition-all hover:bg-destructive/90"
                 >
-                  <div className="h-3 w-3 rounded-sm bg-white" />
+                  <Square className="h-4 w-4 fill-current" />
                 </button>
               ) : (
                 <button
                   type="submit"
-                  disabled={!inputValue.trim()}
+                  disabled={!inputValue.trim() || !canSend}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
                 >
                   <ArrowUp className="h-5 w-5" />
