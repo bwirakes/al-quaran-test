@@ -16,7 +16,6 @@ export const metadata: Metadata = {
     description: "Baca 114 Surah Al-Quran lengkap dengan terjemahan bahasa Indonesia. Al-Fatihah hingga An-Nas.",
     type: "website",
     locale: "id_ID",
-    images: [{ url: "/api/og?title=Daftar Surah Al-Quran&subtitle=114 Surah Lengkap" }],
   },
   alternates: {
     canonical: "/quran"

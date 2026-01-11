@@ -59,20 +59,11 @@ export async function generateMetadata({
       siteName: "Al-Quran Digital Indonesia",
       type: "article",
       locale: "id_ID",
-      images: [
-        {
-          url: `/api/og?surah=${surahNumber}`,
-          width: 1200,
-          height: 630,
-          alt: `Surah ${surah.name_simple}`,
-        },
-      ],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [`/api/og?surah=${surahNumber}`],
     },
     alternates: {
       canonical: url,

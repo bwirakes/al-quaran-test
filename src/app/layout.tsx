@@ -69,22 +69,12 @@ export const metadata: Metadata = {
     title: "Al-Quran Digital - Baca Quran Online dengan Terjemahan Indonesia",
     description:
       "Baca Al-Quran online lengkap dengan terjemahan bahasa Indonesia. 114 surah, 6236 ayat dengan tafsir dan audio. Platform Quran digital terbaik.",
-    images: [
-      {
-        url: "/api/og",
-        width: 1200,
-        height: 630,
-        alt: "Al-Quran Digital Indonesia",
-      },
-    ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Al-Quran Digital - Baca Quran Online dengan Terjemahan Indonesia",
     description:
       "Baca Al-Quran online lengkap dengan terjemahan bahasa Indonesia. 114 surah, 6236 ayat.",
-    images: ["/api/og"],
-    creator: "@qurandigital",
   },
   robots: {
     index: true,

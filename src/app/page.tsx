@@ -29,7 +29,6 @@ function HomeJsonLd() {
       "Asisten AI Islam",
       "Teks Arab dan Latin",
     ],
-    screenshot: "/api/og",
     softwareVersion: "1.0",
     author: {
       "@type": "Organization",

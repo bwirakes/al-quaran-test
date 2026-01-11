@@ -12,31 +12,31 @@ interface VersePageProps {
   params: Promise<{ surah: string; verse: string }>;
 }
 
-// Generate static params for all verses in all surahs
+// Use dynamic rendering with ISR - pages are generated on-demand and cached
+export const dynamicParams = true;
+export const revalidate = 86400; // Revalidate every 24 hours
+
+// Only pre-generate the most popular verses to keep build size small
+// Other verses will be generated on-demand when visited
 export async function generateStaticParams() {
-  const verseCounts = [
-    7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128,
-    111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73,
-    54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60,
-    49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52,
-    44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19,
-    26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3,
-    6, 3, 5, 4, 5, 6,
+  const popularVerses = [
+    { surah: "1", verse: "1" },
+    { surah: "1", verse: "2" },
+    { surah: "1", verse: "3" },
+    { surah: "1", verse: "4" },
+    { surah: "1", verse: "5" },
+    { surah: "1", verse: "6" },
+    { surah: "1", verse: "7" },
+    { surah: "2", verse: "255" }, // Ayatul Kursi
+    { surah: "2", verse: "286" },
+    { surah: "112", verse: "1" },
+    { surah: "112", verse: "2" },
+    { surah: "112", verse: "3" },
+    { surah: "112", verse: "4" },
+    { surah: "113", verse: "1" },
+    { surah: "114", verse: "1" },
   ];
-
-  const params: { surah: string; verse: string }[] = [];
-
-  for (let surah = 1; surah <= 114; surah++) {
-    const verseCount = verseCounts[surah - 1];
-    for (let verse = 1; verse <= verseCount; verse++) {
-      params.push({
-        surah: surah.toString(),
-        verse: verse.toString(),
-      });
-    }
-  }
-
-  return params;
+  return popularVerses;
 }
 
 // Generate dynamic metadata for each verse
@@ -91,20 +91,11 @@ export async function generateMetadata({
       siteName: "Al-Quran Digital Indonesia",
       type: "article",
       locale: "id_ID",
-      images: [
-        {
-          url: `/api/og?surah=${surahNumber}&verse=${verseNumber}`,
-          width: 1200,
-          height: 630,
-          alt: `Surah ${surah.name_simple} Ayat ${verseNumber}`,
-        },
-      ],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [`/api/og?surah=${surahNumber}&verse=${verseNumber}`],
     },
     alternates: {
       canonical: url,
