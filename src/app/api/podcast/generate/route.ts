@@ -108,17 +108,19 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
     // Create job record
     await createJob(jobId, script);
 
-    // Queue TTS job - use QStash in production, direct call in development
-    const isProduction = !!process.env.VERCEL_URL;
-    console.log(`[Generate] VERCEL_URL: ${process.env.VERCEL_URL}`);
-    console.log(`[Generate] isProduction: ${isProduction}`);
+    // Queue TTS job
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : "http://localhost:3000";
+    const workerUrl = `${baseUrl}/api/podcast/tts-worker`;
     
-    if (isProduction) {
-      // Production: Use QStash for background processing
-      const baseUrl = `https://${process.env.VERCEL_URL}`;
-      const workerUrl = `${baseUrl}/api/podcast/tts-worker`;
-      console.log(`[Generate] Worker URL: ${workerUrl}`);
-      
+    console.log(`[Generate] VERCEL_URL: ${process.env.VERCEL_URL}`);
+    console.log(`[Generate] Worker URL: ${workerUrl}`);
+    console.log(`[Generate] QSTASH_TOKEN present: ${!!process.env.QSTASH_TOKEN}`);
+    
+    // Try QStash first if available
+    let qstashSuccess = false;
+    if (process.env.QSTASH_TOKEN) {
       try {
         const qstash = getQStashClient();
         const result = await qstash.publishJSON({
@@ -128,18 +130,19 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
         });
         console.log(`[Generate] QStash result:`, JSON.stringify(result));
         console.log(`[Generate] Queued TTS job ${jobId} via QStash`);
+        qstashSuccess = true;
       } catch (qstashError) {
         console.error("[Generate] QStash error:", qstashError);
-        // Update job to failed so user knows something went wrong
-        await updateJob(jobId, { 
-          status: "failed", 
-          error: `QStash error: ${qstashError instanceof Error ? qstashError.message : "Unknown"}` 
-        });
       }
     } else {
-      // Development: Call TTS worker directly (non-blocking)
-      console.log(`[Generate] Calling TTS worker directly for job ${jobId}`);
-      fetch("http://localhost:3000/api/podcast/tts-worker", {
+      console.log("[Generate] QSTASH_TOKEN not set, skipping QStash");
+    }
+    
+    // Fallback: Call worker directly (fire-and-forget)
+    if (!qstashSuccess) {
+      console.log(`[Generate] Fallback: Calling TTS worker directly for job ${jobId}`);
+      // Fire-and-forget - may not complete if function terminates
+      fetch(workerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId, text: script, voice: "Aoede" }),
