@@ -123,7 +123,7 @@ export function ChatInterface() {
                   <MessageCircle className="h-4 w-4" style={{ color: '#496580' }} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold tracking-tight text-slate-900">
+                  <h1 className="text-base font-bold tracking-tight text-slate-900 font-serif">
                     Asisten Islam
                   </h1>
                   <p className="text-xs text-slate-500 -mt-0.5">

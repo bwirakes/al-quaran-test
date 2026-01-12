@@ -206,11 +206,11 @@ export default async function SurahPage({ params }: SurahPageProps) {
                     </button>
                   </Link>
                   <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center">
-                    <span className="font-bold text-sm" style={{ color: '#496580' }}>{surah.id}</span>
+                    <span className="font-bold text-sm font-serif" style={{ color: '#496580' }}>{surah.id}</span>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h1 className="text-base font-bold tracking-tight text-slate-900">
+                      <h1 className="text-base font-bold tracking-tight text-slate-900 font-serif">
                         {surah.name_simple}
                       </h1>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
