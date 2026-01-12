@@ -110,17 +110,23 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
 
     // Queue TTS job - use QStash in production, direct call in development
     const isProduction = !!process.env.VERCEL_URL;
+    console.log(`[Generate] VERCEL_URL: ${process.env.VERCEL_URL}`);
+    console.log(`[Generate] isProduction: ${isProduction}`);
     
     if (isProduction) {
       // Production: Use QStash for background processing
       const baseUrl = `https://${process.env.VERCEL_URL}`;
+      const workerUrl = `${baseUrl}/api/podcast/tts-worker`;
+      console.log(`[Generate] Worker URL: ${workerUrl}`);
+      
       try {
         const qstash = getQStashClient();
-        await qstash.publishJSON({
-          url: `${baseUrl}/api/podcast/tts-worker`,
+        const result = await qstash.publishJSON({
+          url: workerUrl,
           body: { jobId, text: script, voice: "Aoede" },
           retries: 2,
         });
+        console.log(`[Generate] QStash result:`, JSON.stringify(result));
         console.log(`[Generate] Queued TTS job ${jobId} via QStash`);
       } catch (qstashError) {
         console.error("[Generate] QStash error:", qstashError);

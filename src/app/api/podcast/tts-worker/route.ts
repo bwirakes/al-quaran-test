@@ -59,9 +59,12 @@ interface TTSJobPayload {
 }
 
 async function handler(req: Request): Promise<Response> {
+  let jobId: string | undefined;
+  
   try {
     const body: TTSJobPayload = await req.json();
-    const { jobId, text, voice = "Aoede" } = body;
+    jobId = body.jobId;
+    const { text, voice = "Aoede" } = body;
 
     console.log(`[TTS Worker] Starting job ${jobId}, text length: ${text.length}`);
 
@@ -121,6 +124,7 @@ async function handler(req: Request): Promise<Response> {
       access: "public",
       addRandomSuffix: false,
       contentType: "audio/wav",
+      allowOverwrite: true,
     });
 
     console.log(`[TTS Worker] Audio saved: ${blob.url}`);
@@ -131,6 +135,19 @@ async function handler(req: Request): Promise<Response> {
     return NextResponse.json({ success: true, audioUrl: blob.url });
   } catch (error) {
     console.error("[TTS Worker] Error:", error);
+    
+    // Update job status if we have a jobId
+    if (jobId) {
+      try {
+        await updateJob(jobId, { 
+          status: "failed", 
+          error: error instanceof Error ? error.message : "Worker error" 
+        });
+      } catch (updateError) {
+        console.error("[TTS Worker] Failed to update job status:", updateError);
+      }
+    }
+    
     return NextResponse.json(
       { success: false, error: "Worker error" },
       { status: 500 }
@@ -140,16 +157,24 @@ async function handler(req: Request): Promise<Response> {
 
 // Wrap handler with QStash signature verification
 export async function POST(req: Request): Promise<Response> {
+  console.log("[TTS Worker] POST received");
+  console.log("[TTS Worker] NODE_ENV:", process.env.NODE_ENV);
+  console.log("[TTS Worker] Has signing key:", !!process.env.QSTASH_CURRENT_SIGNING_KEY);
+  
   // Verify QStash signature in production
   if (process.env.NODE_ENV === "production" && process.env.QSTASH_CURRENT_SIGNING_KEY) {
     const signature = req.headers.get("upstash-signature");
+    console.log("[TTS Worker] Signature present:", !!signature);
+    
     const body = await req.text();
+    console.log("[TTS Worker] Body length:", body.length);
     
     try {
       await receiver.verify({
         signature: signature || "",
         body,
       });
+      console.log("[TTS Worker] Signature verified!");
       
       // Re-create request with body for handler
       const newReq = new Request(req.url, {
@@ -164,6 +189,7 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
   
-  // In development, skip verification
+  // In development or without signing key, skip verification
+  console.log("[TTS Worker] Skipping signature verification");
   return handler(req);
 }
