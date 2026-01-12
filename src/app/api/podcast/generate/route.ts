@@ -123,10 +123,19 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
     if (process.env.QSTASH_TOKEN) {
       try {
         const qstash = getQStashClient();
+        
+        // Build headers - include bypass token if available for preview deployments
+        const headers: Record<string, string> = {};
+        if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) {
+          headers["x-vercel-protection-bypass"] = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+          console.log("[Generate] Including Vercel protection bypass header");
+        }
+        
         const result = await qstash.publishJSON({
           url: workerUrl,
           body: { jobId, text: script, voice: "Aoede" },
           retries: 2,
+          headers,
         });
         console.log(`[Generate] QStash result:`, JSON.stringify(result));
         console.log(`[Generate] Queued TTS job ${jobId} via QStash`);
