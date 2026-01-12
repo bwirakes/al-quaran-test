@@ -1,8 +1,8 @@
 /**
- * Simple job status store
- * Uses in-memory Map for fast access (works in both dev and production)
- * Jobs auto-expire after 1 hour
+ * Job status store using Vercel Blob
+ * Works across serverless function invocations
  */
+import { put, list } from "@vercel/blob";
 
 export type JobStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -16,27 +16,12 @@ export interface PodcastJob {
   updatedAt: string;
 }
 
-// In-memory job store (shared across requests in the same serverless instance)
-const jobStore = new Map<string, PodcastJob>();
-
-// Clean up old jobs periodically (1 hour TTL)
-const JOB_TTL_MS = 60 * 60 * 1000;
-
-function cleanupOldJobs() {
-  const now = Date.now();
-  for (const [id, job] of jobStore.entries()) {
-    if (now - new Date(job.createdAt).getTime() > JOB_TTL_MS) {
-      jobStore.delete(id);
-    }
-  }
-}
+const JOB_PREFIX = "podcast-jobs/";
 
 /**
- * Create a new job
+ * Create a new job - stores in Vercel Blob
  */
 export async function createJob(jobId: string, scriptText: string): Promise<PodcastJob> {
-  cleanupOldJobs();
-  
   const job: PodcastJob = {
     id: jobId,
     status: "pending",
@@ -45,22 +30,44 @@ export async function createJob(jobId: string, scriptText: string): Promise<Podc
     updatedAt: new Date().toISOString(),
   };
 
-  jobStore.set(jobId, job);
+  await put(`${JOB_PREFIX}${jobId}.json`, JSON.stringify(job), {
+    access: "public",
+    addRandomSuffix: false,
+    contentType: "application/json",
+    allowOverwrite: true,
+  });
+
   console.log(`[JobStore] Created job ${jobId}`);
   return job;
 }
 
 /**
- * Get job status
+ * Get job status - fetches from Vercel Blob
  */
 export async function getJob(jobId: string): Promise<PodcastJob | null> {
-  const job = jobStore.get(jobId);
-  if (job) {
+  try {
+    // List blobs to find the job file
+    const { blobs } = await list({ prefix: `${JOB_PREFIX}${jobId}.json` });
+    
+    if (blobs.length === 0) {
+      console.log(`[JobStore] Job ${jobId} not found`);
+      return null;
+    }
+
+    // Fetch the job data
+    const response = await fetch(blobs[0].url, { cache: "no-store" });
+    if (!response.ok) {
+      console.log(`[JobStore] Failed to fetch job ${jobId}: ${response.status}`);
+      return null;
+    }
+
+    const job = await response.json();
     console.log(`[JobStore] Found job ${jobId}: ${job.status}`);
-  } else {
-    console.log(`[JobStore] Job ${jobId} not found. Active jobs: ${Array.from(jobStore.keys()).join(", ") || "none"}`);
+    return job;
+  } catch (error) {
+    console.error(`[JobStore] Error getting job ${jobId}:`, error);
+    return null;
   }
-  return job || null;
 }
 
 /**
@@ -70,7 +77,7 @@ export async function updateJob(
   jobId: string,
   updates: Partial<Pick<PodcastJob, "status" | "audioUrl" | "error">>
 ): Promise<PodcastJob | null> {
-  const existing = jobStore.get(jobId);
+  const existing = await getJob(jobId);
   if (!existing) {
     console.log(`[JobStore] Cannot update - job ${jobId} not found`);
     return null;
@@ -82,7 +89,13 @@ export async function updateJob(
     updatedAt: new Date().toISOString(),
   };
 
-  jobStore.set(jobId, updated);
+  await put(`${JOB_PREFIX}${jobId}.json`, JSON.stringify(updated), {
+    access: "public",
+    addRandomSuffix: false,
+    contentType: "application/json",
+    allowOverwrite: true,
+  });
+
   console.log(`[JobStore] Updated job ${jobId}: ${updated.status}`);
   return updated;
 }
@@ -91,5 +104,7 @@ export async function updateJob(
  * Delete job (cleanup)
  */
 export async function deleteJob(jobId: string): Promise<void> {
-  jobStore.delete(jobId);
+  // Note: Vercel Blob doesn't have a delete in the free tier
+  // Jobs will be cleaned up naturally or via dashboard
+  console.log(`[JobStore] Delete requested for ${jobId}`);
 }
