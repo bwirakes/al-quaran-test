@@ -9,7 +9,7 @@ import {
   formatVerseForPodcast,
   type QuranVerse,
 } from "@/lib/podcast/script-generator";
-import { createJob } from "@/lib/podcast/job-store";
+import { createJob, updateJob } from "@/lib/podcast/job-store";
 import type { PodcastTopicId } from "@/stores/user-store";
 
 export const maxDuration = 60;
@@ -130,6 +130,11 @@ Ingat: Jangan membacakan teks Arab dalam naskah, cukup jelaskan maknanya dalam b
         console.log(`[Generate] Queued TTS job ${jobId} via QStash`);
       } catch (qstashError) {
         console.error("[Generate] QStash error:", qstashError);
+        // Update job to failed so user knows something went wrong
+        await updateJob(jobId, { 
+          status: "failed", 
+          error: `QStash error: ${qstashError instanceof Error ? qstashError.message : "Unknown"}` 
+        });
       }
     } else {
       // Development: Call TTS worker directly (non-blocking)
